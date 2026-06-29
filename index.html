@@ -92,6 +92,10 @@
   .empty{background:var(--card);border:1px dashed var(--border);border-radius:14px;padding:22px;text-align:center;color:var(--muted)}
   .empty .btn{margin:12px auto 0;background:var(--sun);color:#3a2a06;display:inline-flex}
 
+  .sortable-ghost{opacity:.35}
+  .sortable-chosen{box-shadow:0 6px 18px rgba(0,0,0,.14)}
+  .sortable-drag .pencil,.sortable-drag .qty{opacity:0}
+
   .addbar{position:fixed;left:0;right:0;bottom:0;background:rgba(246,243,235,.94);
     border-top:1px solid var(--border);backdrop-filter:blur(6px);padding-bottom:env(safe-area-inset-bottom)}
   .addbar .inner{max-width:660px;margin:0 auto;padding:9px 12px}
@@ -131,6 +135,7 @@
 
   <script src="config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

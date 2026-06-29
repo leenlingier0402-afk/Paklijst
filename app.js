@@ -93,20 +93,36 @@ async function newBakkerRound(){
   await sb.from("items").update({done:false}).in("id", ids);
 }
 
-/* verplaatsen: wissel positie met buur in dezelfde groep */
-function moveItem(id, dir){
-  const it = items.find(x=>x.id===id); if(!it) return;
-  const sibs = items
-    .filter(x=> x.list===it.list && (it.list==="bakker" || x.category===it.category))
-    .sort((a,b)=>(a.position||0)-(b.position||0));
-  const idx = sibs.findIndex(x=>x.id===id);
-  const j = dir==="up" ? idx-1 : idx+1;
-  if(j<0 || j>=sibs.length) return;
-  const other = sibs[j];
-  patchMany([
-    { id: it.id, fields:{ position: other.position||0 } },
-    { id: other.id, fields:{ position: it.position||0 } },
-  ]);
+/* slepen: herorden binnen een groep en bewaar de nieuwe volgorde */
+let sortables = [];
+let dragging = false;
+
+function initSortable(){
+  sortables.forEach(s=>{ try{ s.destroy(); }catch(e){} });
+  sortables = [];
+  if(typeof Sortable === "undefined") return;
+  document.querySelectorAll("#list .rows").forEach(el=>{
+    const s = Sortable.create(el, {
+      animation:150,
+      delay:180,
+      delayOnTouchOnly:true,
+      touchStartThreshold:6,
+      filter:".check,.tag,.pencil,.qty,button,input,select,a",
+      preventOnFilter:false,
+      onStart:()=>{ dragging=true; },
+      onEnd:(evt)=>{ dragging=false; persistOrder(evt.to); },
+    });
+    sortables.push(s);
+  });
+}
+
+function persistOrder(container){
+  const ids = Array.from(container.querySelectorAll(".row")).map(r=>r.dataset.id).filter(Boolean);
+  const involved = ids.map(id=>items.find(i=>i.id===id)).filter(Boolean);
+  if(involved.length < 2) return;
+  const positions = involved.map(i=>i.position||0).sort((a,b)=>a-b);
+  const updates = involved.map((i,idx)=>({ id:i.id, fields:{ position: positions[idx] } }));
+  patchMany(updates);
 }
 
 /* ---------- render ---------- */
@@ -188,6 +204,7 @@ function renderInpak(){
       <div class="grphead"><h2>${esc(g.label)}</h2><span class="n">${g.rows.length}</span></div>
       <div class="rows">${g.rows.map(inpakRow).join("")}</div>
     </section>`).join("");
+  initSortable();
 }
 
 function inpakRow(it){
@@ -232,6 +249,7 @@ function renderBakker(){
   if(!all.length){ list.innerHTML = emptyBakker(); return; }
   if(!pool.length){ list.innerHTML = `<div class="empty">Alles gehaald! Tik op <b>Nieuwe ronde</b> voor de volgende ochtend.</div>`; return; }
   list.innerHTML = `<div class="rows">${pool.map(bakkerRow).join("")}</div>`;
+  initSortable();
 }
 
 function bakkerRow(it){
@@ -253,10 +271,6 @@ function editRow(it, withCat){
     <div class="edit">
       <input data-field="name" value="${esc(it.name)}" placeholder="Naam" />
       ${withCat?`<select data-field="category">${CATEGORIES.map(cc=>`<option ${cc===it.category?"selected":""}>${cc}</option>`).join("")}</select>`:""}
-      <div class="erow">
-        <button class="btn move" data-act="moveup">${I.up} Omhoog</button>
-        <button class="btn move" data-act="movedown">${I.down} Omlaag</button>
-      </div>
       <div class="erow">
         <button class="btn dark" data-act="save">${I.check} Bewaren</button>
         <button class="btn ghost" data-act="canceledit">${I.x}</button>
@@ -382,8 +396,6 @@ document.addEventListener("click",(e)=>{
     case "edit": state.editingId=id; busyInput=true; render(); break;
     case "canceledit": state.editingId=null; busyInput=false; render(); break;
     case "save": saveEdit(id); break;
-    case "moveup": if(id) moveItem(id,"up"); break;
-    case "movedown": if(id) moveItem(id,"down"); break;
     case "del": if(id) remove(id); break;
     case "login": doLogin(); break;
     case "logout": doLogout(); break;
@@ -431,7 +443,7 @@ function startApp(){
   if(started) return; started=true;
   fetchAll();
   rtChannel = sb.channel("items-rt").on("postgres_changes",{event:"*",schema:"public",table:"items"},()=>{
-    if(busyInput || state.editingId || state.adding){ pendingSync=true; return; }
+    if(busyInput || state.editingId || state.adding || dragging){ pendingSync=true; return; }
     fetchAll();
   }).subscribe();
 }
