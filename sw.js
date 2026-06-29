@@ -1,12 +1,7 @@
-const CACHE = "inpaklijst-v1";
+const CACHE = "inpaklijst-v3";
 const SHELL = [
-  "./",
-  "./index.html",
-  "./app.js",
-  "./config.js",
-  "./manifest.webmanifest",
-  "./icon-192.png",
-  "./icon-512.png",
+  "./","./index.html","./app.js","./config.js","./manifest.webmanifest",
+  "./icon-192.png","./icon-512.png",
 ];
 
 self.addEventListener("install", (e) => {
@@ -23,19 +18,18 @@ self.addEventListener("activate", (e) => {
 
 self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
-  // Supabase API altijd via netwerk (live data)
   if (url.hostname.endsWith("supabase.co") || url.hostname.endsWith("supabase.in")) return;
-  // App-shell: cache-first met netwerk-fallback
-  e.respondWith(
-    caches.match(e.request).then((hit) =>
-      hit ||
+  if (e.request.method !== "GET") return;
+
+  // network-first voor eigen bestanden: altijd de nieuwste versie online,
+  // val terug op cache wanneer offline.
+  if (url.origin === location.origin) {
+    e.respondWith(
       fetch(e.request).then((res) => {
         const copy = res.clone();
-        if (e.request.method === "GET" && res.ok && url.origin === location.origin) {
-          caches.open(CACHE).then((c) => c.put(e.request, copy));
-        }
+        if (res.ok) caches.open(CACHE).then((c) => c.put(e.request, copy));
         return res;
-      }).catch(() => hit)
-    )
-  );
+      }).catch(() => caches.match(e.request))
+    );
+  }
 });
