@@ -13,7 +13,7 @@ const I = {
 };
 
 /* ---------- constants ---------- */
-const CATEGORIES = ["Documenten","Gezondheid & verzorging","Apparatuur","Onderweg / auto","Huisje & keuken","Buiten & ontspanning","Eten & boodschappen"];
+const CATEGORIES = ["Documenten","Gezondheid & verzorging","Apparatuur","Onderweg / auto","Huisje & keuken","Buiten & ontspanning"];
 const LOCS = ["", "Beveren", "Göteborg"];
 
 const SEED_INPAK = {
