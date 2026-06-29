@@ -1,0 +1,14 @@
+{
+  "name": "Inpaklijst Zweden",
+  "short_name": "Inpaklijst",
+  "description": "Gedeelde inpaklijst voor het zomerhuisje in Zweden",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F6F3EB",
+  "theme_color": "#223A2C",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
